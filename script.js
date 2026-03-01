@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Scroll fade-in animations ---
   const fadeElements = document.querySelectorAll(
-    '.service-card, .why-card, .about-content, .about-certs, .contact-info, .contact-form, .credential'
+    '.service-card, .testimonial-card, .why-card, .about-content, .about-certs, .contact-info, .contact-form, .credential'
   );
 
   fadeElements.forEach(el => el.classList.add('fade-in'));
@@ -54,25 +54,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fadeElements.forEach(el => observer.observe(el));
 
-  // --- Contact form handling ---
+  // --- Contact form handling (Formspree) ---
   const form = document.getElementById('contactForm');
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const name = formData.get('name');
 
-    // Log form data (replace with actual API endpoint in production)
-    console.log('Form submitted:', data);
+    // Disable button during submission
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
 
-    // Show success message
-    form.innerHTML = `
-      <div class="form-success visible">
-        <h3>Message Sent</h3>
-        <p>Thanks, ${data.name}. We'll get back to you within 24 hours.</p>
-      </div>
-    `;
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(response => {
+      if (response.ok) {
+        form.innerHTML = `
+          <div class="form-success visible">
+            <h3>Message Sent</h3>
+            <p>Thanks, ${name}. We'll get back to you within 24 hours.</p>
+          </div>
+        `;
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
+        form.insertAdjacentHTML('beforeend',
+          '<p class="form-error">Something went wrong. Please try again or email us directly.</p>'
+        );
+      }
+    })
+    .catch(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Message';
+      form.insertAdjacentHTML('beforeend',
+        '<p class="form-error">Connection error. Please try again or email us directly.</p>'
+      );
+    });
   });
 
 });
